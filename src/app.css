@@ -13,3 +13,8 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+h1{
+  font-size: 48px;
+  color: rgba(200,100,50,1);
+  text-align: center;
+}
