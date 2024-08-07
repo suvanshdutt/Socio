@@ -13,12 +13,19 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1{
+h1 {
   font-size: 48px;
   color: rgba(200,100,50,1);
   text-align: center;
 }
 
-p{
-  color: black;
+textarea {
+  width: calc(100% - 22px);
+  height: 30px;
+  margin-top: 10px;
+  font-size: large;
+  line-height: 2;
+  resize: none;
+  padding: 10px;
+  overflow: hidden;
 }
