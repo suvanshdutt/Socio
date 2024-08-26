@@ -11,6 +11,12 @@
     messages: ChatMessage[];
   }
 
+  interface FetchedChatData {
+    _id: string;
+    participants: string;
+    messages: any[];
+  }
+
   let chats: ChatData[] = [
     { name: 'Alice', profile_picture: '../public/blank.png', messages: [{ content: 'Hi!' }, { content: 'How are you?' }] },
     { name: 'Bob', profile_picture: '../public/blank.png', messages: [{ content: 'Hello!' }, { content: 'What’s up?' }] }
@@ -20,23 +26,93 @@
 
   function handleChatSelect(chat: ChatData) {
     selectedChat = chat;
+    fetchMessages();
   }
 
   // Enter key triggers send button
-
-  document.addEventListener('DOMContentLoaded', () => {
-    const textarea = document.getElementById('message-input') as HTMLTextAreaElement | null;
+  
+  const handleKeyUp = (event: KeyboardEvent): void => {
     const sendButton = document.getElementById('send-button') as HTMLButtonElement | null;
+    
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault(); // Prevent newline character
+      if (sendButton) {
+        sendButton.click(); // Trigger click on send button
+      }
+    }
+  };
 
-    if (textarea && sendButton) {
-      textarea.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-          event.preventDefault(); // Prevent newline character
-          sendButton.click(); // Trigger click on send button
+  // sends the message and clears the textarea
+
+  function handleSendClick() {
+    const textarea = document.getElementById('message-input') as HTMLTextAreaElement | null;
+    if (textarea && textarea.value.trim() !== '') {
+      sendMessage(textarea.value.trim());
+      textarea.value = ''; // Clear the input field
+    }
+  }
+
+  // sending messages
+  async function sendMessage(content: string) {
+  if (selectedChat) {
+    try {
+      const response = await fetch('http://localhost:8000/chat/chats/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          participants: selectedChat.name,
+          messages: [{ content }],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
+
+      const data = await response.json();
+      console.log('Message sent:', data);
+
+      // Update the UI with the new message
+      selectedChat.messages.push({ content });
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  }
+}
+
+  // fetching messages
+
+  async function fetchMessages() {
+  try {
+    const response = await fetch('http://localhost:8000/chat/chats/');
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    const data = await response.json();
+    console.log('Fetched messages:', data);
+    console.log(data.chats[0].messages);
+    
+    // Ensure data.chats is an array
+    if (Array.isArray(data.chats)) {
+      // Update chats with the fetched messages
+      data.chats.forEach((fetchedChat: FetchedChatData) => {
+        const existingChatIndex = chats.findIndex(chat => chat.name === fetchedChat.participants);
+        if (existingChatIndex !== -1) {
+          // Update the existing chat with the fetched messages
+          chats[existingChatIndex].messages = [...chats[existingChatIndex].messages, ...fetchedChat.messages];
         }
       });
+    } else {
+      console.error('Expected an array of chats');
     }
-  });
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+  }
+}
+
+
 </script>
 
 <main>
@@ -69,8 +145,8 @@
               <p class="msg">{content}</p>
             {/each}
           </div>
-          <textarea id="message-input" placeholder="Type a message..."></textarea>
-          <button id="send-button" class="send-button" aria-label="Send Message">
+          <textarea id="message-input" placeholder="Type a message..." on:keypress={handleKeyUp}></textarea>
+          <button id="send-button" aria-label="Send Message" on:click={handleSendClick} >
             <!-- SVG arrow pointing top-right -->
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
               <path 
@@ -173,7 +249,7 @@
     font-size: medium;
   }
 
-  .send-button {
+  #send-button {
     position: absolute;
     bottom: 16px;
     right: 16px;
@@ -189,13 +265,13 @@
     box-shadow: 0px 2px 4px rgba(0,0,0,0.2);
   }
 
-  .send-button svg {
+  #send-button svg {
     width: 25px;
     height: 25px;
     fill: aliceblue;
   }
 
-  .send-button:hover {
+  #send-button:hover {
     background-color: rgba(241,241,241,1);
     transform: scale(1.1);
   }
