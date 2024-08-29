@@ -4,10 +4,14 @@
   let sidebar_active: boolean = false;
 </script>
 
-<Header />
+<Header
+  on:toggle_sidebar={() => {
+    sidebar_active = !sidebar_active;
+  }}
+/>
 <main>
   <div class="panels">
-    {#if { sidebar_active }}
+    {#if sidebar_active}
       <div class="sidebar">sidebar goes here</div>
     {/if}
     <div class="current_chat">Current chat panel should be here.</div>
